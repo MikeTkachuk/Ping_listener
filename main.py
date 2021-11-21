@@ -120,34 +120,45 @@ def email_listener(config,tracker,emails_to_send):
     while True:
         sending_start = datetime.datetime.now()
         attempt = 0
+
+        # usernames -> (username,email)
+        new_pairs = []
         while len(emails_to_send) > 0:
+            email_s = config['users'][emails_to_send[0]].get('device_email',None) or config['recipient']
+            if isinstance(email_s,list):
+                for e in email_s:
+                    new_pairs.append((emails_to_send[0],e))
+                else:
+                    new_pairs.append((emails_to_send[0],email_s))
+            emails_to_send.pop(0)
+
+        while len(new_pairs) > 0:
             try:
                 email_obj = email.message.EmailMessage()
-                email_obj.set_content(message.format(user=emails_to_send[0],
-                                                     last_reported=tracker[emails_to_send[0]]['last_pinged'],
-                                                     config_freq=config['users'][emails_to_send[0]]['max_sleep'],
-                                                     year=tracker[emails_to_send[0]]['last_pinged'].strftime('%y'),
-                                                     month=tracker[emails_to_send[0]]['last_pinged'].month,
-                                                     day=tracker[emails_to_send[0]]['last_pinged'].day,
+                email_obj.set_content(message.format(user=new_pairs[0][0],
+                                                     last_reported=tracker[new_pairs[0][0]]['last_pinged'],
+                                                     config_freq=config['users'][new_pairs[0][0]]['max_sleep'],
+                                                     year=tracker[new_pairs[0][0]]['last_pinged'].strftime('%y'),
+                                                     month=tracker[new_pairs[0][0]]['last_pinged'].month,
+                                                     day=tracker[new_pairs[0][0]]['last_pinged'].day,
                                                      server_root=config['server_root']
                                                     ))
-                email_obj['Subject'] = subject.format(user=emails_to_send[0])
+                email_obj['Subject'] = subject.format(user=new_pairs[0][0])
                 email_obj['From'] = login
-                email_obj['To'] = config['users'][emails_to_send[0]].get('device_email',None) \
-                    or config['recipient']
+                email_obj['To'] = new_pairs[0][1]
                 server.send_message(email_obj)
             except Exception as e:
                 server = connect()
 
-                print(f'Email sending regarding user {emails_to_send[0]} \
-                to recipient {config["recipient"]} failed')
+                print(f'Email sending regarding user {new_pairs[0][0]} \
+                to recipient {new_pairs[0][1]} failed')
                 print(e)
                 if attempt < retries:
                     attempt += 1
                     continue
 
-            print(emails_to_send[0])
-            emails_to_send.pop(0)
+            print(new_pairs[0])
+            new_pairs.pop(0)
             attempt = 0
 
         to_sleep = config['email_processing_frequency'] - datetime.datetime.now().timestamp() + sending_start.timestamp()
