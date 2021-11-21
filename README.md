@@ -8,7 +8,7 @@ Frequency is refered to as a delay in seconds between processing loops.
   'server_root':(str) 'https://example.net' a string to append to logs link in the emails,  
   'base_frequency': (scalar>=0) a delay between the steps of a ping absence listener,  
   'email_processing_frequency': (scalar>=0) a delay before the next processing of the emails queue,  
-  'recipient': 'example@something.sth' (str) representing the recipient email,  
+  'recipient': (str) representing the recipient email,  
   'users': a dict of pairs (username:(unique str),user config described below)  
   }
 
@@ -16,6 +16,7 @@ Frequency is refered to as a delay in seconds between processing loops.
   {  
   'monitor': (bool) if false never sends emails,  
   'max_sleep': (scalar>=0) max delay between pings in seconds,  
+  'device_email': (str) Optional. Represents a device-specific email. Defaults to the 'recipient' field of a server config.
   'email_frequency': (scalar>=0) min delay between subsequent emails for a particular user  
   }
   

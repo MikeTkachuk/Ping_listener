@@ -133,7 +133,8 @@ def email_listener(config,tracker,emails_to_send):
                                                     ))
                 email_obj['Subject'] = subject.format(user=emails_to_send[0])
                 email_obj['From'] = login
-                email_obj['To'] = config['recipient']
+                email_obj['To'] = config['users'][emails_to_send[0]].get('device_email',None) \
+                    or config['recipient']
                 server.send_message(email_obj)
             except Exception as e:
                 server = connect()
