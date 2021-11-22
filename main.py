@@ -36,9 +36,9 @@ def ping():
 @app.route('/get_test_config',methods=['POST'])
 def get_test_config():
     test_password = request.get_json(force=True).get('password')
-    if os.getenv('TESTING_PASSWORD',None):
+    if os.getenv('TESTING_PASSWORD',None) is None:
         raise Exception('Critical Security alert! Testing password is not set.')
-    if test_password == os.getenv('TESTING_ALERT'):
+    if test_password == os.getenv('TESTING_PASSWORD'):
         return json.dumps(dict(config))
     else:
         abort(400)
@@ -77,7 +77,6 @@ def listener(config,tracker,emails_to_send):
 
     while True:
         check_time = datetime.datetime.now()
-        #print('listener', tracker, emails_to_send)
 
         for username in tracker.keys():
             email_needed = check_user(username,check_time.timestamp())
@@ -128,8 +127,8 @@ def email_listener(config,tracker,emails_to_send):
             if isinstance(email_s,list):
                 for e in email_s:
                     new_pairs.append((emails_to_send[0],e))
-                else:
-                    new_pairs.append((emails_to_send[0],email_s))
+            else:
+                new_pairs.append((emails_to_send[0],email_s))
             emails_to_send.pop(0)
 
         while len(new_pairs) > 0:
@@ -141,7 +140,7 @@ def email_listener(config,tracker,emails_to_send):
                                                      year=tracker[new_pairs[0][0]]['last_pinged'].strftime('%y'),
                                                      month=tracker[new_pairs[0][0]]['last_pinged'].month,
                                                      day=tracker[new_pairs[0][0]]['last_pinged'].day,
-                                                     server_root=config['server_root']
+                                                     server_root=config.get('server_root','')
                                                     ))
                 email_obj['Subject'] = subject.format(user=new_pairs[0][0])
                 email_obj['From'] = login
@@ -157,7 +156,6 @@ def email_listener(config,tracker,emails_to_send):
                     attempt += 1
                     continue
 
-            print(new_pairs[0])
             new_pairs.pop(0)
             attempt = 0
 
