@@ -4,7 +4,7 @@ import time
 import datetime
 
 import flask
-from flask import Flask, render_template, request, url_for, session,jsonify, abort
+from flask import Flask, render_template, request, url_for, session, jsonify, abort
 
 import json
 import smtplib
@@ -18,52 +18,62 @@ def render_manual_ping():
     return render_template('testing.html')
 
 
-@app.route('/ping',methods=['GET'])
+@app.route('/ping', methods=['GET'])
 def ping():
-    user = request.args.get('username',None)
-    if user not in tracker:
-        abort(404)
+    try:
+        user = request.args.get('username', None)
+        if user not in tracker:
+            abort(404)
 
-    time_received = datetime.datetime.now()
+        time_received = datetime.datetime.now()
 
-    user_dict = tracker[user]
-    user_dict['last_pinged'] = time_received
-    tracker[user] = user_dict
+        user_dict = tracker[user]
+        user_dict['last_pinged'] = time_received
+        tracker[user] = user_dict
 
-    log_queue.append({'user':user,'ping_time':time_received})
-    return time_received.strftime(time_format)
+        log_queue.append({'user': user, 'ping_time': time_received})
+        return time_received.strftime(time_format)
+    except Exception as e:
+        with open('log.txt', 'a') as f:
+            f.write('\nping: ' + str(e))
 
-@app.route('/get_test_config',methods=['POST'])
+
+@app.route('/get_test_config', methods=['POST'])
 def get_test_config():
-    test_password = request.get_json(force=True).get('password')
-    if os.getenv('TESTING_PASSWORD',None) is None:
-        raise Exception('Critical Security alert! Testing password is not set.')
-    if test_password == os.getenv('TESTING_PASSWORD'):
-        return json.dumps(dict(config))
-    else:
-        abort(400)
+    try:
+        test_password = request.get_json(force=True).get('password')
+        if os.getenv('TESTING_PASSWORD', None) is None:
+            raise Exception('Critical Security alert! Testing password is not set.')
+        if test_password == os.getenv('TESTING_PASSWORD'):
+            return json.dumps(dict(config))
+        else:
+            abort(400)
+    except Exception as e:
+        with open('log.txt', 'a') as f:
+            f.write('\n' + str(e))
+
 
 @app.route('/logs')
 def logs():
     user = request.args.get('username')
     date = f'{request.args.get("year")}-{request.args.get("month")}-{request.args.get("day")}'
     try:
-        with open(f'logs/{date}/{user}.txt','r') as f:
+        with open(f'logs/{date}/{user}.txt', 'r') as f:
             pings = [i[:-1] for i in f.readlines()]
-        return json.dumps({'date':date,'pings':pings})
+        return json.dumps({'date': date, 'pings': pings})
     except Exception as e:
         print(e)
         abort(404)
 
+
 def init_tracker():
     for user in config['users'].keys():
-        tracker[user] = {'last_pinged':datetime.datetime.now(),
-                         'last_email_sent':datetime.datetime.fromtimestamp(87000)}
+        tracker[user] = {'last_pinged': datetime.datetime.now(),
+                         'last_email_sent': datetime.datetime.fromtimestamp(87000)}
 
 
-def listener(config,tracker,emails_to_send):
-
-    def check_user(user,now):
+def listener(config, tracker, emails_to_send):
+    def check_user(user, now):
         monitor = config['users'][user]['monitor']
         if not monitor:
             return False
@@ -72,14 +82,14 @@ def listener(config,tracker,emails_to_send):
             return False
 
         new_email_needed = now - tracker[user]['last_email_sent'].timestamp() > \
-                                config['users'][user]['email_frequency']
+                           config['users'][user]['email_frequency']
         return new_email_needed
 
     while True:
         check_time = datetime.datetime.now()
 
         for username in tracker.keys():
-            email_needed = check_user(username,check_time.timestamp())
+            email_needed = check_user(username, check_time.timestamp())
             if email_needed:
                 emails_to_send.append(username)
                 user_track = tracker[username]
@@ -88,12 +98,13 @@ def listener(config,tracker,emails_to_send):
         to_sleep = config['base_frequency'] - datetime.datetime.now().timestamp() + check_time.timestamp()
         if to_sleep < 0:
             print('Listener can`t catch up with the base frequency!')
-        time.sleep(max(to_sleep,0))
+        time.sleep(max(to_sleep, 0))
 
-def email_listener(config,tracker,emails_to_send):
-    port = os.getenv('SMTP_PORT',None) or 465  # For SSL
-    password = os.getenv('SMTP_PASSWORD',None)
-    login = os.getenv('SMTP_LOGIN',None)
+
+def email_listener(config, tracker, emails_to_send):
+    port = os.getenv('SMTP_PORT', None) or 465  # For SSL
+    password = os.getenv('SMTP_PASSWORD', None)
+    login = os.getenv('SMTP_LOGIN', None)
 
     # Create a secure SSL context
     context = ssl.create_default_context()
@@ -109,7 +120,7 @@ def email_listener(config,tracker,emails_to_send):
     User {user}
     last reported at {last_reported}
     with a max sleep time of {config_freq} seconds.
-    
+
     -----
     Request logs at {server_root}/logs?username={user}&year={year}&month={month}&day={day}
     """
@@ -123,12 +134,12 @@ def email_listener(config,tracker,emails_to_send):
         # usernames -> (username,email)
         new_pairs = []
         while len(emails_to_send) > 0:
-            email_s = config['users'][emails_to_send[0]].get('device_email',None) or config['recipient']
-            if isinstance(email_s,list):
+            email_s = config['users'][emails_to_send[0]].get('device_email', None) or config['recipient']
+            if isinstance(email_s, list):
                 for e in email_s:
-                    new_pairs.append((emails_to_send[0],e))
+                    new_pairs.append((emails_to_send[0], e))
             else:
-                new_pairs.append((emails_to_send[0],email_s))
+                new_pairs.append((emails_to_send[0], email_s))
             emails_to_send.pop(0)
 
         while len(new_pairs) > 0:
@@ -140,8 +151,8 @@ def email_listener(config,tracker,emails_to_send):
                                                      year=tracker[new_pairs[0][0]]['last_pinged'].strftime('%y'),
                                                      month=tracker[new_pairs[0][0]]['last_pinged'].month,
                                                      day=tracker[new_pairs[0][0]]['last_pinged'].day,
-                                                     server_root=config.get('server_root','')
-                                                    ))
+                                                     server_root=config.get('server_root', '')
+                                                     ))
                 email_obj['Subject'] = subject.format(user=new_pairs[0][0])
                 email_obj['From'] = login
                 email_obj['To'] = new_pairs[0][1]
@@ -164,9 +175,10 @@ def email_listener(config,tracker,emails_to_send):
         if to_sleep < 0:
             print('Email sender can`t catch up with the email processing frequency!')
 
-        time.sleep(max(to_sleep,0))
+        time.sleep(max(to_sleep, 0))
 
-def logger(to_log,config):
+
+def logger(to_log, config):
     """
     Logs a queue of dicts to the logs file system
     :param to_log:
@@ -177,7 +189,7 @@ def logger(to_log,config):
         while len(to_log) > 0:
             entry = to_log[0]
             try:
-                with open(f'logs/{entry["ping_time"].strftime("%y-%m-%d")}/{entry["user"]}.txt','a') as f:
+                with open(f'logs/{entry["ping_time"].strftime("%y-%m-%d")}/{entry["user"]}.txt', 'a') as f:
                     f.write(f'{entry["ping_time"].strftime("%H:%M:%S")}\n')
             except Exception as e:
                 if attempts > 1:
@@ -189,19 +201,20 @@ def logger(to_log,config):
             to_log.pop(0)
         time.sleep(config['base_frequency'])
 
+
 def update_logs(config):
     """
     Creates a new log directory of today's date at /logs
     :return:
     """
     today = datetime.datetime.now()
-    path = os.path.join('logs',today.strftime('%y-%m-%d'))
+    path = os.path.join('logs', today.strftime('%y-%m-%d'))
     try:
         if os.path.exists(path):
             raise Exception(f'Attempted to create a duplicate of the daily log! {today.strftime("%y-%m-%d")}')
         os.mkdir(path)
         for user in config['users']:
-            open(os.path.join(path,f'{user}.txt'),'a').close()
+            open(os.path.join(path, f'{user}.txt'), 'a').close()
     except Exception as e:
         print(e)
 
@@ -223,9 +236,9 @@ if __name__ == '__main__':
     print(config)
 
     init_tracker()
-    p = Process(target=listener,args=(config,tracker,emails_to_send))
-    emails = Process(target=email_listener,args=(config,tracker,emails_to_send))
-    log = Process(target=logger, args=(log_queue,config))
+    p = Process(target=listener, args=(config, tracker, emails_to_send))
+    emails = Process(target=email_listener, args=(config, tracker, emails_to_send))
+    log = Process(target=logger, args=(log_queue, config))
     p.start()
     emails.start()
     log.start()
