@@ -249,7 +249,7 @@ if __name__ == '__main__':
     app.config['emails_to_send'] = emails_to_send
     app.config['log_queue'] = log_queue
 
-    app.run(use_reloader=False)
+    app.run(debug=True,use_reloader=False)
 
     p.join()
     emails.join()
