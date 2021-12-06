@@ -20,6 +20,8 @@ def render_manual_ping():
 
 @app.route('/ping', methods=['GET'])
 def ping():
+    tracker = app.config['tracker']
+    log_queue = app.config['log_queue']
     try:
         user = request.args.get('username', None)
         if user not in tracker:
@@ -39,6 +41,7 @@ def ping():
 
 @app.route('/get_test_config', methods=['POST'])
 def get_test_config():
+    config = app.config['config']
     try:
         test_password = request.get_json(force=True).get('password')
         if os.getenv('TESTING_PASSWORD', None) is None:
@@ -240,6 +243,11 @@ if __name__ == '__main__':
     p.start()
     emails.start()
     log.start()
+
+    app.config['config'] = config
+    app.config['tracker'] = tracker
+    app.config['emails_to_send'] = emails_to_send
+    app.config['log_queue'] = log_queue
 
     app.run(use_reloader=False)
 
