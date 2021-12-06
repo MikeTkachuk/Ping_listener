@@ -241,7 +241,7 @@ if __name__ == '__main__':
     emails.start()
     log.start()
 
-    app.run()
+    app.run(use_reloader=False)
 
     p.join()
     emails.join()
