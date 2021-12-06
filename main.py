@@ -34,8 +34,7 @@ def ping():
         log_queue.append({'user': user, 'ping_time': time_received})
         return time_received.strftime(time_format)
     except Exception as e:
-        with open('log.txt', 'a') as f:
-            f.write('\nping: ' + str(e))
+        print(e)
 
 
 @app.route('/get_test_config', methods=['POST'])
@@ -49,8 +48,7 @@ def get_test_config():
         else:
             abort(400)
     except Exception as e:
-        with open('log.txt', 'a') as f:
-            f.write('\n' + str(e))
+        print(e)
 
 
 @app.route('/logs')
