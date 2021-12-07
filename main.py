@@ -15,6 +15,11 @@ import email
 class FlaskSubclass(Flask):
     def __init__(self,name):
         self.time_format = '%y/%m/%d %H:%M:%S'
+        self.config_ = None
+        self.tracker = None
+        self.emails_to_send = None
+        self.log_queue = None
+        self.manager = None
         super().__init__(name)
 
     def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
