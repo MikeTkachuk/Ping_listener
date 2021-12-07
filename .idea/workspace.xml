@@ -16,9 +16,8 @@
     </select>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8518c336-77eb-4c05-a8b7-b97d9b42bb7e" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-    </list>
+    <list default="true" id="8518c336-77eb-4c05-a8b7-b97d9b42bb7e" name="Default Changelist" comment="" />
+    <list id="c7b6c2f1-e312-4f3d-b51b-9676cfea44a1" name="Revert &quot;before_first_request used&quot;" comment="Revert &quot;before_first_request used&quot;&#10;&#10;This reverts commit 987ddb19" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -26,6 +25,7 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
   </component>
   <component name="ProjectId" id="216UrldjlVfh3LElK4NHML70T3L" />
   <component name="ProjectViewState">
