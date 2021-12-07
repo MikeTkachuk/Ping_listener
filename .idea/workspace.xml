@@ -20,12 +20,15 @@
       <path>
         <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
         <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
-        <item name="BRANCH:flask_subclass" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="BRANCH:main" type="e8cecc67:BranchNodeDescriptor" />
       </path>
     </select>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cbd4ea88-b437-4e78-949c-b9ac0d0911ed" name="Default Changelist" comment="revert to raw" />
+    <list default="true" id="8518c336-77eb-4c05-a8b7-b97d9b42bb7e" name="Default Changelist" comment="revert to raw">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,7 +36,6 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-    <option name="RESET_MODE" value="HARD" />
   </component>
   <component name="ProjectId" id="216UrldjlVfh3LElK4NHML70T3L" />
   <component name="ProjectViewState">
@@ -90,7 +92,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="flask_subclass" />
+                        <option value="main" />
                       </list>
                     </value>
                   </entry>
@@ -120,22 +122,22 @@
       <screen x="0" y="0" width="1333" height="849" />
     </state>
     <state x="449" y="192" key="FileChooserDialogImpl/0.0.1333.849@0.0.1333.849" timestamp="1637570039859" />
-    <state width="1313" height="222" key="GridCell.Tab.0.bottom" timestamp="1638814486882">
+    <state width="1313" height="222" key="GridCell.Tab.0.bottom" timestamp="1638869020245">
       <screen x="0" y="0" width="1333" height="849" />
     </state>
-    <state width="1313" height="222" key="GridCell.Tab.0.bottom/0.0.1333.849@0.0.1333.849" timestamp="1638814486882" />
-    <state width="1313" height="222" key="GridCell.Tab.0.center" timestamp="1638814486882">
+    <state width="1313" height="222" key="GridCell.Tab.0.bottom/0.0.1333.849@0.0.1333.849" timestamp="1638869020245" />
+    <state width="1313" height="222" key="GridCell.Tab.0.center" timestamp="1638869020245">
       <screen x="0" y="0" width="1333" height="849" />
     </state>
-    <state width="1313" height="222" key="GridCell.Tab.0.center/0.0.1333.849@0.0.1333.849" timestamp="1638814486882" />
-    <state width="1313" height="222" key="GridCell.Tab.0.left" timestamp="1638814486881">
+    <state width="1313" height="222" key="GridCell.Tab.0.center/0.0.1333.849@0.0.1333.849" timestamp="1638869020245" />
+    <state width="1313" height="222" key="GridCell.Tab.0.left" timestamp="1638869020244">
       <screen x="0" y="0" width="1333" height="849" />
     </state>
-    <state width="1313" height="222" key="GridCell.Tab.0.left/0.0.1333.849@0.0.1333.849" timestamp="1638814486881" />
-    <state width="1313" height="222" key="GridCell.Tab.0.right" timestamp="1638814486882">
+    <state width="1313" height="222" key="GridCell.Tab.0.left/0.0.1333.849@0.0.1333.849" timestamp="1638869020244" />
+    <state width="1313" height="222" key="GridCell.Tab.0.right" timestamp="1638869020245">
       <screen x="0" y="0" width="1333" height="849" />
     </state>
-    <state width="1313" height="222" key="GridCell.Tab.0.right/0.0.1333.849@0.0.1333.849" timestamp="1638814486882" />
+    <state width="1313" height="222" key="GridCell.Tab.0.right/0.0.1333.849@0.0.1333.849" timestamp="1638869020245" />
     <state width="1313" height="269" key="GridCell.Tab.1.bottom" timestamp="1637418787795">
       <screen x="0" y="0" width="1333" height="849" />
     </state>
