@@ -11,7 +11,45 @@ import smtplib
 import ssl
 import email
 
-app = Flask(__name__)
+
+class FlaskSubclass(Flask):
+    def __init__(self,name):
+        self.time_format = '%y/%m/%d %H:%M:%S'
+        super().__init__(name)
+
+    def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
+
+        # create logs dir
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+
+        manager = Manager()
+        self.config_ = manager.dict(json.load(open('config.json', 'r')))
+        self.tracker = manager.dict()
+        self.emails_to_send = manager.list()
+        self.log_queue = manager.list()
+        self.manager = manager
+
+        print(self.config_)
+
+        init_tracker(self.config_,self.tracker)
+
+        self.p = Process(target=listener, args=(self.config_, self.tracker, self.emails_to_send))
+        self.emails = Process(target=email_listener, args=(self.config_, self.tracker, self.emails_to_send))
+        self.log = Process(target=logger, args=(self.log_queue, self.config_))
+
+        self.p.start()
+        self.emails.start()
+        self.log.start()
+        super().run(host=host,port=port, debug=debug, load_dotenv=load_dotenv, **options)
+
+        self.p.join()
+        self.emails.join()
+        self.log.join()
+        self.manager.__exit__()
+
+
+app = FlaskSubclass(__name__)
 
 @app.route('/')
 def render_manual_ping():
@@ -20,8 +58,9 @@ def render_manual_ping():
 
 @app.route('/ping', methods=['GET'])
 def ping():
-    tracker = app.config['tracker']
-    log_queue = app.config['log_queue']
+    time_format = app.time_format
+    tracker = app.tracker
+    log_queue = app.log_queue
     try:
         user = request.args.get('username', None)
         if user not in tracker:
@@ -41,7 +80,8 @@ def ping():
 
 @app.route('/get_test_config', methods=['POST'])
 def get_test_config():
-    config = app.config['config']
+
+    config = app.config_
     try:
         test_password = request.get_json(force=True).get('password')
         if os.getenv('TESTING_PASSWORD', None) is None:
@@ -52,7 +92,7 @@ def get_test_config():
             abort(400)
     except Exception as e:
         print(e)
-
+        raise Exception
 
 @app.route('/logs')
 def logs():
@@ -67,7 +107,7 @@ def logs():
         abort(404)
 
 
-def init_tracker():
+def init_tracker(config,tracker):
     for user in config['users'].keys():
         tracker[user] = {'last_pinged': datetime.datetime.now(),
                          'last_email_sent': datetime.datetime.fromtimestamp(87000)}
@@ -222,37 +262,6 @@ def update_logs(config):
 
 if __name__ == '__main__':
     # TODO silence emails when ping resumes?
-    time_format = '%y/%m/%d %H:%M:%S'
 
-    # create logs dir
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
-
-    manager = Manager()
-    config = manager.dict(json.load(open('config.json', 'r')))
-    tracker = manager.dict()
-    emails_to_send = manager.list()
-    log_queue = manager.list()
-
-    print(config)
-
-    init_tracker()
-    p = Process(target=listener, args=(config, tracker, emails_to_send))
-    emails = Process(target=email_listener, args=(config, tracker, emails_to_send))
-    log = Process(target=logger, args=(log_queue, config))
-    p.start()
-    emails.start()
-    log.start()
-
-    app.config['config'] = config
-    app.config['tracker'] = tracker
-    app.config['emails_to_send'] = emails_to_send
-    app.config['log_queue'] = log_queue
-
-    app.run(debug=True,use_reloader=False)
-
-    p.join()
-    emails.join()
-    log.join()
-    manager.__exit__()
+    app.run(use_reloader=False)
 
