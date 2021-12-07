@@ -23,38 +23,36 @@ class FlaskSubclass(Flask):
         super().__init__(name)
 
     def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
-
-        # create logs dir
-        if not os.path.exists('logs'):
-            os.mkdir('logs')
-
-        manager = Manager()
-        self.config_ = manager.dict(json.load(open('config.json', 'r')))
-        self.tracker = manager.dict()
-        self.emails_to_send = manager.list()
-        self.log_queue = manager.list()
-        self.manager = manager
-
-        print(self.config_)
-
-        init_tracker(self.config_,self.tracker)
-
-        self.p = Process(target=listener, args=(self.config_, self.tracker, self.emails_to_send))
-        self.emails = Process(target=email_listener, args=(self.config_, self.tracker, self.emails_to_send))
-        self.log = Process(target=logger, args=(self.log_queue, self.config_))
-
-        self.p.start()
-        self.emails.start()
-        self.log.start()
         super().run(host=host,port=port, debug=debug, load_dotenv=load_dotenv, **options)
-
-        self.p.join()
-        self.emails.join()
-        self.log.join()
-        self.manager.__exit__()
 
 
 app = FlaskSubclass(__name__)
+
+@app.before_first_request
+def init_app():
+    # create logs dir
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+
+    manager = Manager()
+    app.config_ = manager.dict(json.load(open('config.json', 'r')))
+    app.tracker = manager.dict()
+    app.emails_to_send = manager.list()
+    app.log_queue = manager.list()
+    app.manager = manager
+
+    print(app.config_)
+
+    init_tracker(app.config_, app.tracker)
+
+    app.p = Process(target=listener, args=(app.config_, app.tracker, app.emails_to_send))
+    app.emails = Process(target=email_listener, args=(app.config_, app.tracker, app.emails_to_send))
+    app.log = Process(target=logger, args=(app.log_queue, app.config_))
+
+    app.p.start()
+    app.emails.start()
+    app.log.start()
+
 
 @app.route('/')
 def render_manual_ping():
@@ -167,7 +165,6 @@ def email_listener(config, tracker, emails_to_send):
     User {user}
     last reported at {last_reported}
     with a max sleep time of {config_freq} seconds.
-
     -----
     Request logs at {server_root}/logs?username={user}&year={year}&month={month}&day={day}
     """
@@ -268,6 +265,4 @@ def update_logs(config):
 
 if __name__ == '__main__':
     # TODO silence emails when ping resumes?
-
     app.run(use_reloader=False)
-
