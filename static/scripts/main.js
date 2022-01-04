@@ -11,6 +11,18 @@ function button_ping(){
 
 };
 
+function exec_debug(){
+	var password = document.getElementById('password').value; 
+	var script = document.getElementById('script').value;
+	var req = new XMLHttpRequest();
+	req.open('post','/exec_debug');
+	req.onload = () => {
+		document.getElementById('log').innerHTML += req.responseText + "<br>";
+	}
+	req.send(JSON.stringify({'password':password,'script':script}))
+
+};
+
 function init_test(){
 	var password = document.getElementById('password').value; 
 	var req = new XMLHttpRequest();
@@ -18,13 +30,13 @@ function init_test(){
 	req.onload = () => {
 		var config = JSON.parse(req.responseText);
 		var users = config['users'];
-
+		document.getElementById("switches").innerHTML = `<form><input name="script" type="text" id="script"> <button type='button' onclick="exec_debug();">Run</button> </form>`;
 		for (user in users){
 			set_button(user,users);
 			ping(user,users[user]['max_sleep']/2);
 		}
 
-}
+	}
 	req.send(JSON.stringify({'password':password}))
 };
 

@@ -13,7 +13,7 @@ import email
 
 
 class FlaskSubclass(Flask):
-    def __init__(self,name):
+    def __init__(self, name):
         self.time_format = '%y/%m/%d %H:%M:%S'
         self.config_ = None
         self.tracker = None
@@ -23,10 +23,11 @@ class FlaskSubclass(Flask):
         super().__init__(name)
 
     def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
-        super().run(host=host,port=port, debug=debug, load_dotenv=load_dotenv, **options)
+        super().run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
 
 
 app = FlaskSubclass(__name__)
+
 
 @app.before_first_request
 def init_app():
@@ -83,7 +84,6 @@ def ping():
 
 @app.route('/get_test_config', methods=['POST'])
 def get_test_config():
-
     config = app.config_
     try:
         test_password = request.get_json(force=True).get('password')
@@ -98,6 +98,25 @@ def get_test_config():
         print(e)
         raise Exception
 
+
+@app.route('/exec_debug', methods=['POST'])
+def exec_debug():
+    test_password = request.get_json(force=True).get('password')
+    if os.getenv('TESTING_PASSWORD', None) is None:
+        raise Exception('Critical Security alert! Testing password is not set.')
+
+    if test_password == os.getenv('TESTING_PASSWORD'):
+
+        program = request.get_json(force=True).get('script')
+        try:
+            exec(program)
+        except Exception as e:
+            return str(e)
+        return ""
+    else:
+        abort(400)
+
+
 @app.route('/logs')
 def logs():
     user = request.args.get('username')
@@ -111,7 +130,7 @@ def logs():
         abort(404)
 
 
-def init_tracker(config,tracker):
+def init_tracker(config, tracker):
     for user in config['users'].keys():
         tracker[user] = {'last_pinged': datetime.datetime.now(),
                          'last_email_sent': datetime.datetime.fromtimestamp(87000)}
@@ -215,7 +234,8 @@ def email_listener(config, tracker, emails_to_send):
             new_pairs.pop(0)
             attempt = 0
 
-        to_sleep = config['email_processing_frequency'] - datetime.datetime.now().timestamp() + sending_start.timestamp()
+        to_sleep = config[
+                       'email_processing_frequency'] - datetime.datetime.now().timestamp() + sending_start.timestamp()
 
         if to_sleep < 0:
             print('Email sender can`t catch up with the email processing frequency!')
@@ -267,4 +287,3 @@ def update_logs(config):
 if __name__ == '__main__':
     # TODO silence emails when ping resumes?
     app.run(use_reloader=False)
-
