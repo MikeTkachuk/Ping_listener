@@ -43,8 +43,8 @@ function init_test(){
 		var config = JSON.parse(req.responseText);
 		var users = config['users'];
 		document.getElementById("switches").innerHTML = '';
-		document.getElementById("switches").innerHTML = `<h4>Execute python code directly:</h4><form><textarea name="config" id="config" rows="10" cols="50"></textarea> <button type='button' onclick="update_config();">Update</button> </form>`;
-		document.getElementById("switches").innerHTML = `<h4>Update the server config:</h4><form><textarea name="script" id="script" rows="10" cols="50"></textarea> <button type='button' onclick="exec_debug();">Run</button> </form>`;
+		document.getElementById("switches").innerHTML += `<h4>Update the server config:Execute python code directly:</h4><form><textarea name="config" id="config" rows="10" cols="50"></textarea> <button type='button' onclick="update_config();">Update</button> </form>`;
+		document.getElementById("switches").innerHTML += `<h4>Execute python code directly:</h4><form><textarea name="script" id="script" rows="10" cols="50"></textarea> <button type='button' onclick="exec_debug();">Run</button> </form>`;
 		for (user in users){
 			set_button(user,users);
 			ping(user,users[user]['max_sleep']/2);
