@@ -20,6 +20,10 @@ class FlaskSubclass(Flask):
         self.emails_to_send = None
         self.log_queue = None
         self.manager = None
+        self.pin = None
+        self.p = None
+        self.emails = None
+        self.log = None
         super().__init__(name)
 
     def run(self, host=None, port=None, debug=None, load_dotenv=True, **options):
@@ -72,9 +76,9 @@ def init_app():
     init_tracker(app.config_)
 
     app.pin = Process(target=pinger, args=(app.ping_queue,))
-    app.p = Process(target=listener, args=(app, app.emails_to_send))
-    app.emails = Process(target=email_listener, args=(app, app.emails_to_send, app.log_queue))
-    app.log = Process(target=logger, args=(app, app.log_queue))
+    app.p = Process(target=listener, args=(app.config_, app.emails_to_send))
+    app.emails = Process(target=email_listener, args=(app.config_, app.emails_to_send, app.log_queue))
+    app.log = Process(target=logger, args=(app.config_, app.log_queue))
 
     app.pin.start()
     app.p.start()
@@ -146,10 +150,10 @@ def get_test_config():
 @app.route('/update_config', methods=['POST'])
 def update_config():
     test_password = request.get_json(force=True).get('password')
-    if not os.getenv('TESTING_PASSWORD', None) is None:
+    if os.getenv('TESTING_PASSWORD', None) is None:
         raise Exception('Critical Security alert! Testing password is not set.')
 
-    if test_password != os.getenv('TESTING_PASSWORD'):
+    if test_password == os.getenv('TESTING_PASSWORD'):
 
         try:
             config = app.manager.dict(json.loads(request.get_json(force=True).get('config')))
