@@ -72,9 +72,9 @@ def init_app():
     init_tracker(app.config_)
 
     app.pin = Process(target=pinger, args=(app.ping_queue,))
-    app.p = Process(target=listener, args=(app.config_, app.emails_to_send))
-    app.emails = Process(target=email_listener, args=(app.config_, app.emails_to_send, app.log_queue))
-    app.log = Process(target=logger, args=(app.log_queue, app.config_))
+    app.p = Process(target=listener, args=(app, app.emails_to_send))
+    app.emails = Process(target=email_listener, args=(app, app.emails_to_send, app.log_queue))
+    app.log = Process(target=logger, args=(app, app.log_queue))
 
     app.pin.start()
     app.p.start()
@@ -121,6 +121,24 @@ def get_test_config():
     except Exception as e:
         print(e)
         raise Exception
+
+
+@app.route('/update_config', methods=['POST'])
+def update_config():
+    test_password = request.get_json(force=True).get('password')
+    if os.getenv('TESTING_PASSWORD', None) is None:
+        raise Exception('Critical Security alert! Testing password is not set.')
+
+    if test_password == os.getenv('TESTING_PASSWORD'):
+
+        try:
+            config = app.manager.dict(json.loads(request.get_json(force=True).get('config')))
+            app.config_ = config
+        except Exception as e:
+            return str(e)
+        return "Successfully updated config!"
+    else:
+        abort(400)
 
 
 @app.route('/exec_debug', methods=['POST'])
@@ -184,7 +202,9 @@ def pinger(ping_queue):
             ping_queue.pop(0)
 
 
-def listener(config, emails_to_send):
+def listener(app_, emails_to_send):
+    config = app_.config_
+
     def check_user(tracker, user, now):
         monitor = config['users'][user]['monitor']
         if not monitor:
@@ -223,7 +243,8 @@ def listener(config, emails_to_send):
         time.sleep(max(to_sleep, 0))
 
 
-def email_listener(config, emails_to_send, to_log):
+def email_listener(app_, emails_to_send, to_log):
+    config = app_.config_
     port = os.getenv('SMTP_PORT', None) or 465  # For SSL
     password = os.getenv('SMTP_PASSWORD', None)
     login = os.getenv('SMTP_LOGIN', None)
@@ -316,12 +337,13 @@ def email_listener(config, emails_to_send, to_log):
         time.sleep(max(to_sleep, 0))
 
 
-def logger(to_log, config):
+def logger(app_, to_log):
     """
     Logs a queue of dicts to the logs file system
     :param to_log:
     :return:
     """
+    config = app_.config_
     while True:
         attempts = 0
         while len(to_log) > 0:
@@ -343,11 +365,13 @@ def logger(to_log, config):
         time.sleep(config['base_frequency'])
 
 
-def update_logs(config):
+def update_logs(app_):
     """
     Creates a new log directory of today's date at /logs
     :return:
     """
+    config = app_.config_
+
     today = datetime.datetime.now()
     path = os.path.join('logs', today.strftime('%y-%m-%d'))
     try:
