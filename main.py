@@ -41,7 +41,9 @@ def get_tracker(username):
         except json.JSONDecodeError:
             time.sleep(0.001)
             continue
-    raise json.JSONDecodeError(f'Failed to init tracker after {tries} times.')
+    print(f'Failed to init tracker after {tries} times.')
+    out = json.loads(out_s)
+    return out
 
 
 def write_tracker(username, tracker_obj):
