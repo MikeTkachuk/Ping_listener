@@ -130,6 +130,8 @@ def logs():
 
 
 def init_tracker(config):
+    if not os.path.exists(os.path.join(app.root_path,'tracker')):
+        os.mkdir(os.path.join(app.root_path,'tracker'))
     tracker = {}    # unnecessary
     for user in config['users'].keys():
         tracker[user] = {'last_pinged': datetime.datetime.now().timestamp(),
@@ -201,7 +203,7 @@ def listener(config, emails_to_send):
         time.sleep(max(to_sleep, 0))
 
 
-def email_listener(config, tracker, emails_to_send):
+def email_listener(config, emails_to_send):
     port = os.getenv('SMTP_PORT', None) or 465  # For SSL
     password = os.getenv('SMTP_PASSWORD', None)
     login = os.getenv('SMTP_LOGIN', None)
