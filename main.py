@@ -364,13 +364,11 @@ def logger(app_, to_log):
         time.sleep(config['base_frequency'])
 
 
-def update_logs(app_):
+def update_logs(config):
     """
     Creates a new log directory of today's date at /logs
     :return:
     """
-    config = app_.config_
-
     today = datetime.datetime.now()
     path = os.path.join('logs', today.strftime('%y-%m-%d'))
     try:
