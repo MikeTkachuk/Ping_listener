@@ -267,7 +267,7 @@ def email_listener(config, emails_to_send, to_log):
                 log_msg = f'\n An alert sent to {new_pairs[0][1]}:\n\t{new_pairs[0][0]}' \
                           f"last reported at {last_pinged} with a " \
                           f"{config['users'][new_pairs[0][0]]['max_sleep']} seconds max_sleep set\n"
-                to_log.append({'alert': True, 'msg': log_msg})
+                to_log.append({'alert': True, 'msg': log_msg, 'user': new_pairs[0][0], 'ping_time': last_pinged})
             except Exception as e:
                 server = connect()
 
@@ -302,7 +302,7 @@ def logger(to_log, config):
             entry = to_log[0]
             try:
                 with open(f'logs/{entry["ping_time"].strftime("%y-%m-%d")}/{entry["user"]}.txt', 'a') as f:
-                    if entry.get('alert',None):
+                    if entry.get('alert', None):
                         f.write(entry['msg'])
                     else:
                         f.write(f'{entry["ping_time"].strftime("%H:%M:%S")}\n')
