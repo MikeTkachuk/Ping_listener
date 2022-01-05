@@ -163,7 +163,7 @@ def init_tracker(config):
             try:
                 write_tracker(user, tracker[user])
                 break
-            except OSError as e:
+            except Exception as e:
                 print(e, 'at init_tracker.')
 
 
@@ -177,7 +177,7 @@ def pinger(ping_queue):
 
                     write_tracker(user, user_tracker)
                     break
-                except OSError as e:
+                except Exception as e:
                     print(e, 'at pinger process.')
             ping_queue.pop(0)
 
@@ -209,8 +209,8 @@ def listener(config, emails_to_send):
                 try:
                     write_tracker(username, tracker)
                     break
-                except OSError as e:
-                    print(e)
+                except Exception as e:
+                    print(e, 'at listener process.')
                     time.sleep(0.0005)
 
         to_sleep = config['base_frequency'] - datetime.datetime.now().timestamp() + check_time
