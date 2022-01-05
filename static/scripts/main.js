@@ -23,6 +23,18 @@ function exec_debug(){
 
 };
 
+function update_config(){
+	var password = document.getElementById('password').value; 
+	var script = document.getElementById('config').value;
+	var req = new XMLHttpRequest();
+	req.open('post','/update_config');
+	req.onload = () => {
+		document.getElementById('log').innerHTML += req.responseText + "<br>";
+	}
+	req.send(JSON.stringify({'password':password,'config':config}))
+
+};
+
 function init_test(){
 	var password = document.getElementById('password').value; 
 	var req = new XMLHttpRequest();
@@ -30,7 +42,8 @@ function init_test(){
 	req.onload = () => {
 		var config = JSON.parse(req.responseText);
 		var users = config['users'];
-		document.getElementById("switches").innerHTML = `<h4>Execute python code directly:</h4><form><textarea name="script" id="script" rows="10" cols="50"></textarea> <button type='button' onclick="exec_debug();">Run</button> </form>`;
+		document.getElementById("switches").innerHTML = `<h4>Execute python code directly:</h4><form><textarea name="config" id="config" rows="10" cols="50"></textarea> <button type='button' onclick="update_config();">Update</button> </form>`;
+		document.getElementById("switches").innerHTML = `<h4>Update the server config:</h4><form><textarea name="script" id="script" rows="10" cols="50"></textarea> <button type='button' onclick="exec_debug();">Run</button> </form>`;
 		for (user in users){
 			set_button(user,users);
 			ping(user,users[user]['max_sleep']/2);
