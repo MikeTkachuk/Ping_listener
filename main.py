@@ -29,6 +29,29 @@ class FlaskSubclass(Flask):
 app = FlaskSubclass(__name__)
 
 
+def get_tracker(username):
+    tries = 10
+    for i in range(tries):
+        with open(f'tracker/{username}.txt', 'r') as f:
+            f.seek(0)
+            out_s = f.read()
+        try:
+            out = json.loads(out_s)
+            return out
+        except json.JSONDecodeError:
+            time.sleep(0.001)
+            continue
+    raise Exception(f'Failed to init tracker after {tries} times.')
+
+
+def write_tracker(username, tracker_obj):
+    s = json.dumps(tracker_obj)
+    with open(f'tracker/{username}.txt', 'w') as f:
+        f.write(s)
+
+    return
+
+
 @app.before_first_request
 def init_app():
     # create logs dir
@@ -122,8 +145,8 @@ def logs():
     date = f'{request.args.get("year")}-{request.args.get("month")}-{request.args.get("day")}'
     try:
         with open(f'logs/{date}/{user}.txt', 'r') as f:
-            pings = [i[:-1] for i in f.readlines()]
-        return json.dumps({'date': date, 'pings': pings})
+            log_lines = sum([i for i in f.readlines()], '')
+        return log_lines
     except Exception as e:
         print(e)
         abort(404)
@@ -138,8 +161,7 @@ def init_tracker(config):
                          'last_email_sent': 87000}
         while True:
             try:
-                with open(f'tracker/{user}.txt', 'w') as user_tracker:
-                    json.dump(tracker[user], user_tracker)
+                write_tracker(user, tracker[user])
                 break
             except OSError as e:
                 print(e, 'at init_tracker.')
@@ -150,13 +172,10 @@ def pinger(ping_queue):
         for user, ping_time in ping_queue:
             while True:
                 try:
-                    with open(f'tracker/{user}.txt', 'r') as user_tracker_file:
-                        user_tracker = json.load(user_tracker_file)
-                        user_tracker['last_pinged'] = ping_time
+                    user_tracker = get_tracker(user)
+                    user_tracker['last_pinged'] = ping_time
 
-                    with open(f'tracker/{user}.txt', 'w') as user_tracker_file:
-                        json.dump(user_tracker, user_tracker_file)
-
+                    write_tracker(user, user_tracker)
                     break
                 except OSError as e:
                     print(e, 'at pinger process.')
@@ -180,8 +199,7 @@ def listener(config, emails_to_send):
         check_time = datetime.datetime.now().timestamp()
 
         for username in config['users'].keys():
-            with open(f'tracker/{username}.txt', 'r') as tracker_file:
-                tracker = json.load(tracker_file)
+            tracker = get_tracker(username)
 
             email_needed = check_user(tracker, username, check_time)
             if email_needed:
@@ -189,8 +207,7 @@ def listener(config, emails_to_send):
                 tracker['last_email_sent'] = check_time
             while True:  # handles file opening collision
                 try:
-                    with open(f'tracker/{username}.txt', 'w') as tracker_file:
-                        json.dump(tracker, tracker_file)
+                    write_tracker(username, tracker)
                     break
                 except OSError as e:
                     print(e)
@@ -246,8 +263,7 @@ def email_listener(config, emails_to_send, to_log):
             emails_to_send.pop(0)
 
         while len(new_pairs) > 0:
-            with open(f'tracker/{new_pairs[0][0]}.txt', 'r') as tracker_file:
-                tracker = json.load(tracker_file)
+            tracker = get_tracker(new_pairs[0][0])
             last_pinged = datetime.datetime.fromtimestamp(tracker['last_pinged'])
             try:
                 email_obj = email.message.EmailMessage()
