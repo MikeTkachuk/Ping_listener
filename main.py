@@ -157,13 +157,12 @@ def update_config():
 
         try:
             response_config = request.get_json(force=True).get('config')
-            config = app.manager.dict(response_config)
-            app.config_ = config
-            print(app.config_)
-            restart_processes(app)
+            config_str = json.dumps(response_config)
+            with open('config.json', 'w') as c:
+                c.write(config_str)
         except Exception as e:
             return str(e)
-        return "Successfully updated config!"
+        return "Successfully updated config! Restart server for the changes to be live."
     else:
         abort(400)
 
