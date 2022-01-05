@@ -41,7 +41,7 @@ def get_tracker(username):
         except json.JSONDecodeError:
             time.sleep(0.001)
             continue
-    raise Exception(f'Failed to init tracker after {tries} times.')
+    raise json.JSONDecodeError(f'Failed to init tracker after {tries} times.')
 
 
 def write_tracker(username, tracker_obj):
@@ -177,7 +177,7 @@ def pinger(ping_queue):
 
                     write_tracker(user, user_tracker)
                     break
-                except Exception as e:
+                except json.JSONDecodeError as e:
                     print(e, 'at pinger process.')
             ping_queue.pop(0)
 
@@ -199,17 +199,18 @@ def listener(config, emails_to_send):
         check_time = datetime.datetime.now().timestamp()
 
         for username in config['users'].keys():
-            tracker = get_tracker(username)
-
-            email_needed = check_user(tracker, username, check_time)
-            if email_needed:
-                emails_to_send.append(username)
-                tracker['last_email_sent'] = check_time
-            while True:  # handles file opening collision
+            while True:
                 try:
-                    write_tracker(username, tracker)
-                    break
-                except Exception as e:
+                    tracker = get_tracker(username)
+
+                    email_needed = check_user(tracker, username, check_time)
+                    if email_needed:
+                        emails_to_send.append(username)
+                        tracker['last_email_sent'] = check_time
+                        # handles file opening collision
+                        write_tracker(username, tracker)
+                        break
+                except json.JSONDecodeError as e:
                     print(e, 'at listener process.')
                     time.sleep(0.0005)
 
@@ -263,7 +264,14 @@ def email_listener(config, emails_to_send, to_log):
             emails_to_send.pop(0)
 
         while len(new_pairs) > 0:
-            tracker = get_tracker(new_pairs[0][0])
+            while True:
+                try:
+                    tracker = get_tracker(new_pairs[0][0])
+                    break
+                except json.JSONDecodeError as e:
+                    print(e, 'at email sender.')
+                    time.sleep(0.1)
+
             last_pinged = datetime.datetime.fromtimestamp(tracker['last_pinged'])
             try:
                 email_obj = email.message.EmailMessage()
