@@ -156,8 +156,10 @@ def update_config():
     if test_password == os.getenv('TESTING_PASSWORD'):
 
         try:
-            config = app.manager.dict(json.loads(request.get_json(force=True).get('config')))
+            response_config = request.get_json(force=True).get('config')
+            config = app.manager.dict(response_config)
             app.config_ = config
+            print(app.config_)
             restart_processes(app)
         except Exception as e:
             return str(e)
