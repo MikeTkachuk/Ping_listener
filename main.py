@@ -160,6 +160,7 @@ def pinger(ping_queue):
                     break
                 except OSError as e:
                     print(e, 'at pinger process.')
+            ping_queue.pop(0)
 
 
 def listener(config, emails_to_send):
@@ -245,6 +246,8 @@ def email_listener(config, emails_to_send):
             emails_to_send.pop(0)
 
         while len(new_pairs) > 0:
+            with open(f'tracker/{new_pairs[0][0]}.txt', 'r') as tracker_file:
+                tracker = json.load(tracker_file)
             last_pinged = datetime.datetime.fromtimestamp(tracker[new_pairs[0][0]]['last_pinged'])
             try:
                 email_obj = email.message.EmailMessage()
