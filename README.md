@@ -26,7 +26,7 @@ Frequency is refered to as a delay in seconds between processing loops.
  * TESTING_PASSWORD - (str) secures testing mode accessible via <server>/. Its absence  
                       raises an exception only if an attempt to access the testing interface is made  
                       but is likely to crash an application.
-  
+ * SMTP_SERVER - (str) defaults to "smtp.gmail.com"
  * SMTP_PORT - (int) defaults to 465
  * SMTP_LOGIN - (str) an email/login of the application
  * SMTP_PASSWORD - (str) a password to access SMTP API. 

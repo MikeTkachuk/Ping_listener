@@ -48,7 +48,7 @@ def init_app():
 
     app.pin = Process(target=pinger, args=(app.ping_queue,))
     app.p = Process(target=listener, args=(app.config_, app.emails_to_send))
-    app.emails = Process(target=email_listener, args=(app.config_, app.emails_to_send))
+    app.emails = Process(target=email_listener, args=(app.config_, app.emails_to_send, app.log_queue))
     app.log = Process(target=logger, args=(app.log_queue, app.config_))
 
     app.pin.start()
@@ -130,9 +130,9 @@ def logs():
 
 
 def init_tracker(config):
-    if not os.path.exists(os.path.join(app.root_path,'tracker')):
-        os.mkdir(os.path.join(app.root_path,'tracker'))
-    tracker = {}    # unnecessary
+    if not os.path.exists(os.path.join(app.root_path, 'tracker')):
+        os.mkdir(os.path.join(app.root_path, 'tracker'))
+    tracker = {}  # unnecessary
     for user in config['users'].keys():
         tracker[user] = {'last_pinged': datetime.datetime.now().timestamp(),
                          'last_email_sent': 87000}
@@ -164,7 +164,6 @@ def pinger(ping_queue):
 
 
 def listener(config, emails_to_send):
-
     def check_user(tracker, user, now):
         monitor = config['users'][user]['monitor']
         if not monitor:
@@ -174,7 +173,7 @@ def listener(config, emails_to_send):
             return False
 
         new_email_needed = now - tracker['last_email_sent'] > \
-                        config['users'][user]['email_frequency']
+                           config['users'][user]['email_frequency']
         return new_email_needed
 
     while True:
@@ -188,7 +187,7 @@ def listener(config, emails_to_send):
             if email_needed:
                 emails_to_send.append(username)
                 tracker['last_email_sent'] = check_time
-            while True:     # handles file opening collision
+            while True:  # handles file opening collision
                 try:
                     with open(f'tracker/{username}.txt', 'w') as tracker_file:
                         json.dump(tracker, tracker_file)
@@ -204,16 +203,17 @@ def listener(config, emails_to_send):
         time.sleep(max(to_sleep, 0))
 
 
-def email_listener(config, emails_to_send):
+def email_listener(config, emails_to_send, to_log):
     port = os.getenv('SMTP_PORT', None) or 465  # For SSL
     password = os.getenv('SMTP_PASSWORD', None)
     login = os.getenv('SMTP_LOGIN', None)
+    server_name = os.getenv('SMTP_SERVER', "smtp.gmail.com")
 
     # Create a secure SSL context
     context = ssl.create_default_context()
 
     def connect():
-        server = smtplib.SMTP_SSL("smtp.gmail.com", port, context=context)
+        server = smtplib.SMTP_SSL(server_name, port, context=context)
         server.login(login, password)
         return server
 
@@ -248,7 +248,7 @@ def email_listener(config, emails_to_send):
         while len(new_pairs) > 0:
             with open(f'tracker/{new_pairs[0][0]}.txt', 'r') as tracker_file:
                 tracker = json.load(tracker_file)
-            last_pinged = datetime.datetime.fromtimestamp(tracker[new_pairs[0][0]]['last_pinged'])
+            last_pinged = datetime.datetime.fromtimestamp(tracker['last_pinged'])
             try:
                 email_obj = email.message.EmailMessage()
                 email_obj.set_content(message.format(user=new_pairs[0][0],
@@ -263,6 +263,11 @@ def email_listener(config, emails_to_send):
                 email_obj['From'] = login
                 email_obj['To'] = new_pairs[0][1]
                 server.send_message(email_obj)
+
+                log_msg = f'\n An alert sent to {new_pairs[0][1]}:\n\t{new_pairs[0][0]}' \
+                          f"last reported at {last_pinged} with a " \
+                          f"{config['users'][new_pairs[0][0]]['max_sleep']} seconds max_sleep set\n"
+                to_log.append({'alert': True, 'msg': log_msg})
             except Exception as e:
                 server = connect()
 
@@ -296,7 +301,10 @@ def logger(to_log, config):
             entry = to_log[0]
             try:
                 with open(f'logs/{entry["ping_time"].strftime("%y-%m-%d")}/{entry["user"]}.txt', 'a') as f:
-                    f.write(f'{entry["ping_time"].strftime("%H:%M:%S")}\n')
+                    if entry.get('alert',None):
+                        f.write(entry['msg'])
+                    else:
+                        f.write(f'{entry["ping_time"].strftime("%H:%M:%S")}\n')
             except Exception as e:
                 if attempts > 1:
                     raise Exception(e)
