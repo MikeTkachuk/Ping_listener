@@ -16,7 +16,7 @@ class FlaskSubclass(Flask):
     def __init__(self, name):
         self.time_format = '%y/%m/%d %H:%M:%S'
         self.config_ = None
-        self.tracker = None
+        self.ping_queue = None
         self.emails_to_send = None
         self.log_queue = None
         self.manager = None
@@ -37,19 +37,21 @@ def init_app():
 
     manager = Manager()
     app.config_ = manager.dict(json.load(open('config.json', 'r')))
-    app.tracker = manager.dict()
+    app.ping_queue = manager.list()
     app.emails_to_send = manager.list()
     app.log_queue = manager.list()
     app.manager = manager
 
     print(app.config_)
 
-    init_tracker(app.config_, app.tracker)
+    init_tracker(app.config_)
 
-    app.p = Process(target=listener, args=(app.config_, app.tracker, app.emails_to_send))
-    app.emails = Process(target=email_listener, args=(app.config_, app.tracker, app.emails_to_send))
+    app.pin = Process(target=pinger, args=(app.ping_queue,))
+    app.p = Process(target=listener, args=(app.config_, app.emails_to_send))
+    app.emails = Process(target=email_listener, args=(app.config_, app.emails_to_send))
     app.log = Process(target=logger, args=(app.log_queue, app.config_))
 
+    app.pin.start()
     app.p.start()
     app.emails.start()
     app.log.start()
@@ -63,18 +65,15 @@ def render_manual_ping():
 @app.route('/ping', methods=['GET'])
 def ping():
     time_format = app.time_format
-    tracker = app.tracker
     log_queue = app.log_queue
     try:
         user = request.args.get('username', None)
-        if user not in tracker:
+        if user not in app.config_['users']:
             abort(404)
 
         time_received = datetime.datetime.now()
 
-        user_dict = tracker[user]
-        user_dict['last_pinged'] = time_received
-        tracker[user] = user_dict
+        app.ping_queue.append((user, time_received.timestamp()))
 
         log_queue.append({'user': user, 'ping_time': time_received})
         return time_received.strftime(time_format)
@@ -130,38 +129,75 @@ def logs():
         abort(404)
 
 
-def init_tracker(config, tracker):
+def init_tracker(config):
+    tracker = {}    # unnecessary
     for user in config['users'].keys():
-        tracker[user] = {'last_pinged': datetime.datetime.now(),
-                         'last_email_sent': datetime.datetime.fromtimestamp(87000)}
+        tracker[user] = {'last_pinged': datetime.datetime.now().timestamp(),
+                         'last_email_sent': 87000}
+        while True:
+            try:
+                with open(f'tracker/{user}.txt', 'w') as user_tracker:
+                    json.dump(tracker[user], user_tracker)
+                break
+            except OSError as e:
+                print(e, 'at init_tracker.')
 
 
-def listener(config, tracker, emails_to_send):
-    def check_user(user, now):
+def pinger(ping_queue):
+    while True:
+        for user, ping_time in ping_queue:
+            while True:
+                try:
+                    with open(f'tracker/{user}.txt', 'r') as user_tracker_file:
+                        user_tracker = json.load(user_tracker_file)
+                        user_tracker['last_pinged'] = ping_time
+
+                    with open(f'tracker/{user}.txt', 'w') as user_tracker_file:
+                        json.dump(user_tracker, user_tracker_file)
+
+                    break
+                except OSError as e:
+                    print(e, 'at pinger process.')
+
+
+def listener(config, emails_to_send):
+
+    def check_user(tracker, user, now):
         monitor = config['users'][user]['monitor']
         if not monitor:
             return False
-        is_late = now - tracker[user]['last_pinged'].timestamp() > config['users'][user]['max_sleep']
+        is_late = now - tracker['last_pinged'] > config['users'][user]['max_sleep']
         if not is_late:
             return False
 
-        new_email_needed = now - tracker[user]['last_email_sent'].timestamp() > \
-                           config['users'][user]['email_frequency']
+        new_email_needed = now - tracker['last_email_sent'] > \
+                        config['users'][user]['email_frequency']
         return new_email_needed
 
     while True:
-        check_time = datetime.datetime.now()
+        check_time = datetime.datetime.now().timestamp()
 
-        for username in tracker.keys():
-            email_needed = check_user(username, check_time.timestamp())
+        for username in config['users'].keys():
+            with open(f'tracker/{username}.txt', 'r') as tracker_file:
+                tracker = json.load(tracker_file)
+
+            email_needed = check_user(tracker, username, check_time)
             if email_needed:
                 emails_to_send.append(username)
-                user_track = tracker[username]
-                user_track['last_email_sent'] = check_time
-                tracker[username] = user_track  # trigger __setitem__ for proxy update
-        to_sleep = config['base_frequency'] - datetime.datetime.now().timestamp() + check_time.timestamp()
+                tracker['last_email_sent'] = check_time
+            while True:     # handles file opening collision
+                try:
+                    with open(f'tracker/{username}.txt', 'w') as tracker_file:
+                        json.dump(tracker, tracker_file)
+                    break
+                except OSError as e:
+                    print(e)
+                    time.sleep(0.0005)
+
+        to_sleep = config['base_frequency'] - datetime.datetime.now().timestamp() + check_time
         if to_sleep < 0:
             print('Listener can`t catch up with the base frequency!')
+
         time.sleep(max(to_sleep, 0))
 
 
@@ -207,14 +243,15 @@ def email_listener(config, tracker, emails_to_send):
             emails_to_send.pop(0)
 
         while len(new_pairs) > 0:
+            last_pinged = datetime.datetime.fromtimestamp(tracker[new_pairs[0][0]]['last_pinged'])
             try:
                 email_obj = email.message.EmailMessage()
                 email_obj.set_content(message.format(user=new_pairs[0][0],
-                                                     last_reported=tracker[new_pairs[0][0]]['last_pinged'],
+                                                     last_reported=last_pinged,
                                                      config_freq=config['users'][new_pairs[0][0]]['max_sleep'],
-                                                     year=tracker[new_pairs[0][0]]['last_pinged'].strftime('%y'),
-                                                     month=tracker[new_pairs[0][0]]['last_pinged'].month,
-                                                     day=tracker[new_pairs[0][0]]['last_pinged'].day,
+                                                     year=last_pinged.strftime('%y'),
+                                                     month=last_pinged.month,
+                                                     day=last_pinged.day,
                                                      server_root=config.get('server_root', '')
                                                      ))
                 email_obj['Subject'] = subject.format(user=new_pairs[0][0])
