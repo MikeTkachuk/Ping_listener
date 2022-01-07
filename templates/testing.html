@@ -1,11 +1,29 @@
-<html><head>
+<html>
+
+<head>
 	<script src={{url_for('static',filename="/scripts/main.js")}}>
     </script>
+	<style>
+	  div.log{
+		float:left;
+		margin-left:30px;
+		}
+	  #content{
+		float:left;
+	  	}
+	</style>
 </head><body>
-    <form>
+	<div id='content'>
+    <form action='javascript:init_test();' method='post'>
         <input name="password" type="text" id="password">
         <button type='button' onclick="init_test();">Enter</button>
     </form>
     <p id='switches'></p>
-    <p id='log'></p>
-</button></form></body></html>
+</div>
+
+<div class='log'>
+	<h3>Logs</h3>
+	<p><button type='button' onclick="clear_logs();">Clear Logs</button></p>
+    	<p id='log'></p>
+</div>
+</body></html>
