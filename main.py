@@ -1,4 +1,6 @@
 import os
+from io import StringIO
+from contextlib import redirect_stdout
 from multiprocessing import Process, Manager
 import time
 import datetime
@@ -65,7 +67,8 @@ def init_app():
         os.mkdir('logs')
 
     manager = Manager()
-    app.config_ = manager.dict(json.load(open('config.json', 'r')))
+    with open('config.json', 'r') as c:
+        app.config_ = manager.dict(json.load(c))
     app.ping_queue = manager.list()
     app.emails_to_send = manager.list()
     app.log_queue = manager.list()
@@ -177,10 +180,12 @@ def exec_debug():
 
         program = request.get_json(force=True).get('script')
         try:
-            exec(program)
+            with redirect_stdout(StringIO()) as f:
+                exec(program)
+            s = f.getvalue()
         except Exception as e:
             return str(e)
-        return ""
+        return s
     else:
         abort(400)
 
@@ -256,7 +261,7 @@ def listener(config, emails_to_send):
                         tracker['last_email_sent'] = check_time
                         # handles file opening collision
                         write_tracker(username, tracker)
-                        break
+                    break
                 except json.JSONDecodeError as e:
                     print(e, 'at listener process.')
                     time.sleep(0.0005)

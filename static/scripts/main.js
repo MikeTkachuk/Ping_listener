@@ -17,7 +17,7 @@ function exec_debug(){
 	var req = new XMLHttpRequest();
 	req.open('post','/exec_debug');
 	req.onload = () => {
-		document.getElementById('log').innerHTML += req.responseText + "<br>";
+		document.getElementById('log').innerHTML += `<script style="display:block;">${req.responseText}</script>` + "<br>";
 	}
 	req.send(JSON.stringify({'password':password,'script':script}))
 
@@ -43,7 +43,7 @@ function init_test(){
 		var config = JSON.parse(req.responseText);
 		var users = config['users'];
 		document.getElementById("switches").innerHTML = '';
-		document.getElementById("switches").innerHTML += `<h4>Update the server config:Execute python code directly:</h4><form><textarea name="config" id="config" rows="10" cols="50"></textarea> <button type='button' onclick="update_config();">Update</button> </form>`;
+		//document.getElementById("switches").innerHTML += `<h4>Update the server config:</h4><form><textarea name="config" id="config" rows="10" cols="50"></textarea> <button type='button' onclick="update_config();">Update</button> </form>`;
 		document.getElementById("switches").innerHTML += `<h4>Execute python code directly:</h4><form><textarea name="script" id="script" rows="10" cols="50"></textarea> <button type='button' onclick="exec_debug();">Run</button> </form>`;
 		for (user in users){
 			set_button(user,users);
@@ -86,4 +86,8 @@ async function ping(user,sleep_sec){
 		}
 		await sleep(sleep_sec*1000);
 	}
+};
+
+function clear_logs(){
+	document.getElementById('log').innerHTML = '';
 };
