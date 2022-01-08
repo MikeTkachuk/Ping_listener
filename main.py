@@ -357,7 +357,8 @@ def email_listener(config, emails_to_send, to_log):
             new_pairs.pop(0)
             attempt = 0
 
-        to_sleep = config['email_processing_frequency'] - datetime.datetime.now().timestamp() + sending_start.timestamp()
+        to_sleep = config[
+                       'email_processing_frequency'] - datetime.datetime.now().timestamp() + sending_start.timestamp()
 
         if to_sleep < 0:
             print('Email sender can`t catch up with the email processing frequency!')
