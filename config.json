@@ -1,12 +1,12 @@
 {
    "base_frequency": 1,
    "email_processing_frequency": 2,
-   "recipient": "alert.tkachuk@gmail.com",
+   "recipient": "example@gmail.com",
    "users": {
-      "openHAB": {
+      "test": {
          "monitor": true,
          "max_sleep": 30,
-         "email_frequency": 2000
+         "email_frequency": 20
       },
       "test1": {
          "monitor": false,
