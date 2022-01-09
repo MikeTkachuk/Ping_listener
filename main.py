@@ -413,3 +413,4 @@ def update_logs(config):
 if __name__ == '__main__':
     # TODO silence emails when ping resumes?
     app.run(use_reloader=False)
+    """Test update"""
