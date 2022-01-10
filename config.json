@@ -6,7 +6,7 @@
       "openHAB": {
          "monitor": true,
          "max_sleep": 300,
-         "email_frequency": 2000
+         "email_frequency": 600
       },
       "test1": {
          "monitor": false,
