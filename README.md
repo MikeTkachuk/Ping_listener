@@ -5,29 +5,31 @@ A backend that sends emails in case ping is not received within the specified ti
 Frequency is refered to as a delay in seconds between processing loops.
 
   {  
-  'server_root':(str) 'https://example.net' a string to append to logs link in the emails,  
-  'base_frequency': (scalar>=0) a delay between the steps of a ping absence listener,  
-  'email_processing_frequency': (scalar>=0) a delay before the next processing of the emails queue,  
-  'recipient': (str or list(str)) representing the recipient email or list of emails,  
-  'users': a dict of pairs (username:(unique str),user config described below)  
+  '**server_root**':(str) 'https://example.net' a prefix string to insert into logs link in the alert emails;  
+  '**base_frequency**': (scalar>=0) a delay between the steps of a ping absence listener;  
+  '**email_processing_frequency**': (scalar>=0) a delay before the next processing of the emails queue;  
+  '**recipient**': (str or list(str)) representing the recipient email or list of emails;  
+  '**users**': a dict of pairs (username:(unique str),user config described below)  
   }
 
 ### User config template
   {  
-  'monitor': (bool) if false never sends emails,  
-  'max_sleep': (scalar>=0) max delay between pings in seconds,  
-  'device_email': (str or list(str)) Optional. Represents a device-specific email or list of emails.  
-		Defaults to the 'recipient' field of a server config,
-  'email_frequency': (scalar>=0) min delay between subsequent emails for a particular user  
+  '**monitor**': (bool) if false never sends emails;  
+  '**max_sleep**': (scalar>=0) max delay between pings in seconds;  
+  '**device_email**': (str or list(str)) Optional. Represents a device-specific email or list of emails.  
+		Defaults to the 'recipient' field of a server config;
+  '**email_frequency**': (scalar>=0) min delay between subsequent emails for a particular user; 
+  '**refresh_on_ping_restored**' : (bool-like) Optional defaults to True. A ping made after the last email 
+   sent refreshes the email_frequency counter  
   }
   
  
  ## Required environment variables
  * TESTING_PASSWORD - (str) secures testing mode accessible via <server>/. Its absence  
                       raises an exception only if an attempt to access the testing interface is made  
-                      but is likely to crash an application.
- * SMTP_SERVER - (str) defaults to "smtp.gmail.com"
- * SMTP_PORT - (int) defaults to 465
+                      but is likely to crash the application.
+ * SMTP_SERVER - (str) Optional. Defaults to "smtp.gmail.com"
+ * SMTP_PORT - (int) Optional. Defaults to 465
  * SMTP_LOGIN - (str) an email/login of the application
  * SMTP_PASSWORD - (str) a password to access SMTP API. 
   
