@@ -234,7 +234,6 @@ def pinger(ping_queue):
 
 
 def listener(config, emails_to_send):
-
     def check_user(tracker, user, now):
         monitor = config['users'][user]['monitor']
         if not monitor:
@@ -243,9 +242,14 @@ def listener(config, emails_to_send):
         if not is_late:
             return False
 
-        new_email_needed = now - tracker['last_email_sent'] > \
-                           config['users'][user]['email_frequency']
-        return new_email_needed
+        reset_on_ping_restored = bool(config['users'][user].get('refresh_on_ping_restored', True))
+        new_email_not_early = now - tracker['last_email_sent'] > \
+            config['users'][user]['email_frequency']
+        if reset_on_ping_restored:
+            ping_restored = tracker['last_pinged'] > tracker['last_email_sent']
+            return ping_restored or new_email_not_early
+        else:
+            return new_email_not_early
 
     while True:
         check_time = datetime.datetime.now().timestamp()
