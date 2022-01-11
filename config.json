@@ -5,8 +5,8 @@
    "users": {
       "openHAB": {
          "monitor": true,
-         "max_sleep": 30,
-         "email_frequency": 2000
+         "max_sleep": 300,
+         "email_frequency": 600
       },
       "test1": {
          "monitor": false,
