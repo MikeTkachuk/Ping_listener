@@ -5,7 +5,8 @@ A backend that sends emails in case ping is not received within the specified ti
 Frequency is refered to as a delay in seconds between processing loops.
 
   {  
-  '**server_root**':(str) 'https://example.net' a prefix string to insert into logs link in the alert emails;  
+  '**server_root**':(str) Deprecated. Gets overwritten during initialization 'https://example.net' a prefix string  
+    to insert into logs link in the alert emails;  
   '**base_frequency**': (scalar>=0) a delay between the steps of a ping absence listener;  
   '**email_processing_frequency**': (scalar>=0) a delay before the next processing of the emails queue;  
   '**recipient**': (str or list(str)) representing the recipient email or list of emails;  
