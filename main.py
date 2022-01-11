@@ -12,6 +12,7 @@ import json
 import smtplib
 import ssl
 import email
+import requests
 
 
 class FlaskSubclass(Flask):
@@ -69,6 +70,7 @@ def init_app():
     manager = Manager()
     with open('config.json', 'r') as c:
         app.config_ = manager.dict(json.load(c))
+    app.config_['server_root'] = request.base_url
     app.ping_queue = manager.list()
     app.emails_to_send = manager.list()
     app.log_queue = manager.list()
@@ -203,6 +205,11 @@ def logs():
         abort(404)
 
 
+@app.route('/_self_ping')
+def _self_ping():
+    return ''
+
+
 def init_tracker(config):
     if not os.path.exists(os.path.join(app.root_path, 'tracker')):
         os.mkdir(os.path.join(app.root_path, 'tracker'))
@@ -269,6 +276,12 @@ def listener(config, emails_to_send):
                 except json.JSONDecodeError as e:
                     print(e, 'at listener process.')
                     time.sleep(0.0005)
+
+        # self-ping implemented to keep heroku app awake
+        try:
+            requests.get(config['server_root'] + '_self_ping')
+        except Exception as e:
+            print(e)
 
         to_sleep = config['base_frequency'] - datetime.datetime.now().timestamp() + check_time
         if to_sleep < 0:
