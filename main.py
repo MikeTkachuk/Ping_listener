@@ -70,7 +70,7 @@ def init_app():
     manager = Manager()
     with open('config.json', 'r') as c:
         app.config_ = manager.dict(json.load(c))
-    app.config_['server_root'] = request.base_url
+    app.config_['server_root'] = request.url_root
     app.ping_queue = manager.list()
     app.emails_to_send = manager.list()
     app.log_queue = manager.list()
