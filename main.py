@@ -258,6 +258,7 @@ def listener(config, emails_to_send):
         else:
             return new_email_not_early
 
+    self_ping_counter = 0
     while True:
         check_time = datetime.datetime.now().timestamp()
 
@@ -279,7 +280,10 @@ def listener(config, emails_to_send):
 
         # self-ping implemented to keep heroku app awake
         try:
-            requests.get(config['server_root'] + '_self_ping')
+            self_ping_counter += 1
+            if self_ping_counter % 25 == 0:
+                requests.get(config['server_root'] + '_self_ping')
+                self_ping_counter = 0
         except Exception as e:
             print(e)
 
